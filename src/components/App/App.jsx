@@ -38,9 +38,9 @@ export class App extends Component {
   }
 
   handleLoadMore = () => {
-    this.setState(prevState => ({
-      page: (prevState.page += 1),
-    }));
+    let { page } = this.state;
+    page += 1;
+    this.setState({ page });
   };
 
   handleFormSubmit = request => {
