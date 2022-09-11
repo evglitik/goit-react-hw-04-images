@@ -1,5 +1,5 @@
+import { useState, useEffect } from 'react';
 import { Loader } from '../Loader/Loader';
-import { Component } from 'react';
 import { Searchbar } from '../Searchbar/Searchbar';
 import { Button } from '../Button/Button';
 import { getImages } from 'service/api';
@@ -8,72 +8,58 @@ import { GlobalStyle } from '../GlobalStyle';
 import { AppContainer } from './App.styled';
 import { Modal } from 'components/Modal/Modal';
 
-export class App extends Component {
-  state = {
-    request: '',
-    images: [],
-    page: 1,
-    isLoader: false,
-    isModalOpen: false,
-    modalImg: '',
-  };
+export const App = () => {
+  const [request, setRequest] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoader, setIsLoader] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImg, setModalImg] = useState('');
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.page !== this.state.page ||
-      prevState.request !== this.state.request
-    ) {
-      try {
-        this.setState({ isLoader: true });
-        const result = await getImages(this.state.request, this.state.page);
-        this.setState(prevState => ({
-          images: [...prevState.images, ...result],
-        }));
-      } catch (err) {
-        console.log(err);
-      } finally {
-        this.setState({ isLoader: false });
-      }
+  useEffect(() => {
+    if (request === '') {
+      return;
     }
-  }
 
-  handleLoadMore = () => {
-    let { page } = this.state;
-    page += 1;
-    this.setState({ page });
+    setIsLoader(l => (l = true));
+    getImages(request, page)
+      .then(r => {
+        setImages(i => [...i, ...r]);
+      })
+      .catch(err => console.log(err))
+      .finally(() => setIsLoader(l => (l = false)));
+
+  }, [request, page]);
+
+  const handleLoadMore = () => setPage(p => p + 1);
+
+  const handleFormSubmit = request => {
+    setImages([]);
+    setPage(1);
+    setRequest(request);
   };
 
-  handleFormSubmit = request => {
-    this.setState({ images: [], page: 1, request });
-  };
-
-  openModal = id => {
-    const { images } = this.state;
+  const openModal = id => {
     const modalUrlImg = images.find(el => el.id === Number(id)).largeImageURL;
-    this.setState({ isModalOpen: true, modalImg: modalUrlImg });
+    setModalImg(modalUrlImg);
+    setIsModalOpen(m => (m = true));
   };
 
-  closeModal = () => {
-    this.setState({ isModalOpen: false, modalImg: '' });
+  const closeModal = () => {
+    setModalImg('');
+    setIsModalOpen(m => (m = false));
   };
 
-  render() {
-    const { images, isLoader, isModalOpen, modalImg } = this.state;
-    return (
-      <AppContainer>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        <ImageGallery
-          images={images}
-          onModal={this.openModal}
-          offModal={this.closeModal}
-        />
-        {isLoader && <Loader />}
-        {images.length > 0 && <Button handleClick={this.handleLoadMore} />}
-        {isModalOpen && (
-          <Modal img={modalImg} onClosseModal={this.closeModal} />
-        )}
-        <GlobalStyle />
-      </AppContainer>
-    );
-  }
-}
+  return (
+    <AppContainer>
+      <Searchbar onSubmit={handleFormSubmit} />
+      <ImageGallery images={images} onModal={openModal} offModal={closeModal} />
+      {isLoader && <Loader />}
+      {images.length > 0 && !isLoader && (
+        <Button handleClick={handleLoadMore} />
+      )}
+      {isModalOpen && <Modal img={modalImg} onClosseModal={closeModal} />}
+      <GlobalStyle />
+    </AppContainer>
+  );
+};
