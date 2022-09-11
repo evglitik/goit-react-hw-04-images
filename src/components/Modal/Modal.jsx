@@ -7,7 +7,6 @@ export const Modal = ({ img, onClosseModal }) => {
     const handleKeydown = e => {
       if (e.code === 'Escape') {
         onClosseModal();
-        console.log('key esc');
       }
     };
 
